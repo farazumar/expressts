@@ -30,28 +30,58 @@ exports.ExpressServer = void 0;
 const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = require("fs");
-// import glob from 'glob';
+const glob_1 = require("glob");
 class ExpressServer {
     constructor(portSent) {
+        this.routerFiles = [];
         this.app = (0, express_1.default)();
         this.port = portSent ? portSent : (process.env.PORT || 4000);
         this.baseDir = process.cwd();
     }
     loadRoutes() {
         return new Promise((resolve, reject) => {
-            let expressFile = path_1.default.join(this.baseDir, 'server/server.js');
+            try {
+                let routesDir = path_1.default.join(this.baseDir, 'serviceRoutes/**/*.js');
+                let files = (0, glob_1.globSync)(routesDir);
+                this.routerFiles = files;
+                if (files.length !== 0) {
+                    for (let file of files) {
+                        Promise.resolve(`${file}`).then(s => __importStar(require(s))).then((fileMethods) => {
+                            fileMethods.default(this.app);
+                        });
+                    }
+                }
+                resolve(1);
+            }
+            catch (e) {
+                let msg = "Error Occured: ";
+                if (typeof e === "string") {
+                    msg += e.toUpperCase();
+                }
+                else if (e instanceof Error) {
+                    msg += e.message;
+                }
+                reject(msg);
+            }
+        });
+    }
+    loadFeatures() {
+        return new Promise((resolve, reject) => {
+            let expressFile = path_1.default.join(this.baseDir, 'server/serverFeatures.js');
             if ((0, fs_1.existsSync)(expressFile)) {
                 Promise.resolve(`${expressFile}`).then(s => __importStar(require(s))).then((serverfeature) => {
-                    serverfeature.loadAppFeatures(this.app);
+                    serverfeature.default(this.app);
                 });
             }
             resolve(1);
         });
     }
     start() {
-        this.loadRoutes().then(() => {
-            this.app.listen(this.port, () => {
-                console.log(`⚡️[server]: Server is running at http://localhost:${this.port}`);
+        this.loadFeatures().then(() => {
+            this.loadRoutes().then(() => {
+                this.app.listen(this.port, () => {
+                    console.log(`⚡️[server]: Server is running at http://localhost:${this.port}`);
+                });
             });
         });
     }
