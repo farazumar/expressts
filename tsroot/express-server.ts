@@ -15,7 +15,7 @@ class ExpressServer {
         this.port = portSent ? portSent : (process.env.PORT || 4000);
         this.baseDir = process.cwd();
     }
-    loadRoutes() {
+    loadRoutes(): Promise<number> {
         return new Promise((resolve, reject) => {
             try {
                 let routesDir = path.join(this.baseDir, 'serviceRoutes/**/*.js');
@@ -41,7 +41,7 @@ class ExpressServer {
             }
         });
     }
-    loadFeatures() {
+    loadFeatures(): Promise<number> {
         return new Promise((resolve, reject) => {
             let expressFile = path.join(this.baseDir, 'server/serverFeatures.js');
             if (existsSync(expressFile)) {
