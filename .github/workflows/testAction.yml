@@ -9,3 +9,6 @@ jobs:
   print:
     runs-on: ubuntu-22.04
     #runs-on: macos-latest
+    steps:
+      - name: Print test output
+        run: echo "This is a test output from the github action workflow"
